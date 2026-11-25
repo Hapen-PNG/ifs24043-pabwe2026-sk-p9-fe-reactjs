@@ -9,3 +9,7 @@
 /backend/.env
 /backend/.env.*
 !/backend/.env.example
+
+node_modules
+dist
+coverage
