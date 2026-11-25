@@ -25,12 +25,12 @@ describe("API tugas", () => {
     await todosApi.deleteTodo("jwt", 7);
     await todosApi.getTodoStats("jwt");
     expect(fetch.mock.calls.map(([url, options]) => [url, options.method || "GET"])).toEqual([
-      ["http://localhost:8080/api/todos/7", "GET"],
-      ["http://localhost:8080/api/todos", "POST"],
-      ["http://localhost:8080/api/todos/7", "PUT"],
-      ["http://localhost:8080/api/todos/7/status", "PATCH"],
-      ["http://localhost:8080/api/todos/7", "DELETE"],
-      ["http://localhost:8080/api/todos/stats", "GET"],
+      ["/api/todos/7", "GET"],
+      ["/api/todos", "POST"],
+      ["/api/todos/7", "PUT"],
+      ["/api/todos/7/status", "PATCH"],
+      ["/api/todos/7", "DELETE"],
+      ["/api/todos/stats", "GET"],
     ]);
   });
 });

@@ -1,4 +1,4 @@
 import { request } from "../../../shared/api/http.js";
 
-export const listUsers = (token) => request("/admin/users", { token });
-export const listUserTodos = (token, userId) => request(`/admin/users/${userId}/todos`, { token });
+export const listUsers = (token) => request("/api/admin/users", { token });
+export const listUserTodos = (token, userId) => request(`/api/admin/users/${userId}/todos`, { token });

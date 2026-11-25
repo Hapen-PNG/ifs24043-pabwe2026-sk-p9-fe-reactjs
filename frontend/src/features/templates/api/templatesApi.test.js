@@ -15,9 +15,9 @@ describe("API templat", () => {
     await templatesApi.getTemplate(4);
     await templatesApi.cloneTemplate("jwt", 4);
     expect(fetch.mock.calls.map(([url, options]) => [url, options.method || "GET"])).toEqual([
-      ["http://localhost:8080/api/templates", "GET"],
-      ["http://localhost:8080/api/templates/4", "GET"],
-      ["http://localhost:8080/api/templates/4/clone", "POST"],
+      ["/api/templates", "GET"],
+      ["/api/templates/4", "GET"],
+      ["/api/templates/4/clone", "POST"],
     ]);
   });
 });

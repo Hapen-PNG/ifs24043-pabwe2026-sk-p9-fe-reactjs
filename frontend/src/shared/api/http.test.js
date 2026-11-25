@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultApiUrl, request } from "./http.js";
+
+async function loadRequest(baseUrl = "") {
+  vi.stubEnv("VITE_API_BASE_URL", baseUrl);
+  vi.resetModules();
+  return import("./http.js");
+}
 
 function responseFor(body, ok = true) {
   return { ok, json: vi.fn().mockResolvedValue(body) };
@@ -11,13 +16,16 @@ describe("request API", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
 
-  it("mengirim permintaan GET tanpa token atau isi", async () => {
+  it("mengirim GET ke path relatif saat base URL kosong", async () => {
+    const { request } = await loadRequest();
     fetch.mockResolvedValue(responseFor({ status: "success", data: { todos: [] } }));
-    await expect(request("/todos")).resolves.toEqual({ todos: [] });
-    expect(fetch).toHaveBeenCalledWith(`${defaultApiUrl}/todos`, {
+
+    await expect(request("/api/todos")).resolves.toEqual({ todos: [] });
+    expect(fetch).toHaveBeenCalledWith("/api/todos", {
       method: "GET",
       headers: { Accept: "application/json" },
       body: undefined,
@@ -25,16 +33,34 @@ describe("request API", () => {
     });
   });
 
+  it("menggunakan base URL dari environment", async () => {
+    const { request } = await loadRequest("https://api.example.com");
+    fetch.mockResolvedValue(responseFor({ status: "success", data: {} }));
+
+    await request("/api/todos");
+    expect(fetch).toHaveBeenCalledWith("https://api.example.com/api/todos", expect.any(Object));
+  });
+
+  it("menghapus slash di akhir base URL agar tidak menggandakan slash", async () => {
+    const { request } = await loadRequest("https://api.example.com/");
+    fetch.mockResolvedValue(responseFor({ status: "success", data: {} }));
+
+    await request("/api/todos");
+    expect(fetch).toHaveBeenCalledWith("https://api.example.com/api/todos", expect.any(Object));
+  });
+
   it("mengirim token, metode, isi JSON, dan sinyal pembatalan", async () => {
+    const { request } = await loadRequest();
     const controller = new AbortController();
     fetch.mockResolvedValue(responseFor({ status: "success", data: { id: 2 } }));
-    await request("/todos", {
+
+    await request("/api/todos", {
       token: "jwt",
       method: "POST",
       body: { title: "Belajar" },
       signal: controller.signal,
     });
-    expect(fetch).toHaveBeenCalledWith(`${defaultApiUrl}/todos`, {
+    expect(fetch).toHaveBeenCalledWith("/api/todos", {
       method: "POST",
       headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: "Bearer jwt" },
       body: JSON.stringify({ title: "Belajar" }),
@@ -43,22 +69,41 @@ describe("request API", () => {
   });
 
   it("mengembalikan objek kosong ketika data tidak tersedia", async () => {
+    const { request } = await loadRequest();
     fetch.mockResolvedValue(responseFor({ status: "success", data: null }));
-    await expect(request("/logout")).resolves.toEqual({});
+    await expect(request("/api/logout")).resolves.toEqual({});
   });
 
   it("menolak respons HTTP gagal dengan pesan server", async () => {
+    const { request } = await loadRequest();
     fetch.mockResolvedValue(responseFor({ status: "error", message: "Server bermasalah" }, false));
-    await expect(request("/todos")).rejects.toThrow("Server bermasalah");
+    await expect(request("/api/todos")).rejects.toThrow("Server bermasalah");
   });
 
   it("menolak status API gagal dengan pesan bawaan bila pesan kosong", async () => {
+    const { request } = await loadRequest();
     fetch.mockResolvedValue(responseFor({ status: "fail", message: "" }));
-    await expect(request("/todos")).rejects.toThrow("Permintaan tidak berhasil");
+    await expect(request("/api/todos")).rejects.toThrow("Permintaan tidak berhasil");
   });
 
   it("menolak respons yang bukan JSON", async () => {
+    const { request } = await loadRequest();
     fetch.mockResolvedValue({ ok: true, json: vi.fn().mockRejectedValue(new SyntaxError("JSON rusak")) });
-    await expect(request("/todos")).rejects.toThrow("Respons server tidak valid");
+    await expect(request("/api/todos")).rejects.toThrow("Respons server tidak valid");
+  });
+
+  it("menampilkan pesan Bahasa Indonesia saat fetch gagal karena jaringan", async () => {
+    const { request } = await loadRequest();
+    fetch.mockRejectedValue(new TypeError("Failed to fetch"));
+    await expect(request("/api/todos")).rejects.toThrow(
+      "Tidak dapat terhubung ke server. Periksa koneksi atau coba lagi nanti.",
+    );
+  });
+
+  it("meneruskan error fetch selain TypeError", async () => {
+    const { request } = await loadRequest();
+    const error = new Error("Fetch gagal");
+    fetch.mockRejectedValue(error);
+    await expect(request("/api/todos")).rejects.toBe(error);
   });
 });

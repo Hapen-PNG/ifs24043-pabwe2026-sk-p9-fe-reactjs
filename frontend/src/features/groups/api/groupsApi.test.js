@@ -17,11 +17,11 @@ describe("API grup tugas", () => {
     await groupsApi.updateGroup("jwt", 3, { title: "Kuliah baru" });
     await groupsApi.deleteGroup("jwt", 3);
     expect(fetch.mock.calls.map(([url, options]) => [url, options.method || "GET"])).toEqual([
-      ["http://localhost:8080/api/todo-groups", "GET"],
-      ["http://localhost:8080/api/todo-groups/3", "GET"],
-      ["http://localhost:8080/api/todo-groups", "POST"],
-      ["http://localhost:8080/api/todo-groups/3", "PUT"],
-      ["http://localhost:8080/api/todo-groups/3", "DELETE"],
+      ["/api/todo-groups", "GET"],
+      ["/api/todo-groups/3", "GET"],
+      ["/api/todo-groups", "POST"],
+      ["/api/todo-groups/3", "PUT"],
+      ["/api/todo-groups/3", "DELETE"],
     ]);
   });
 });
